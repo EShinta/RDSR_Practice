@@ -169,6 +169,155 @@ PS3.16 (Appendix A. Structured Reporting Templates(Normative))の、以下2つ�
 
 のようになり、元々2階層で表現されていたものが、4階層になります。
 
+### key のコード化
 
+ここから、DICOMのタグに即した形式に変えていきます。
+そして、このあたりから元のXMLの構造からは想像しにくい階層構造が頻出するので、
+XMLが異様に分かりにくくなります。
+
+key-valaue のkey側をコードで表します。keyとしては、
+今回の例だと2つの階層にありますが、両方とも置き換えていきます。
+
+keyのコード化ですが、DICOMでは伝統的にコード化というと、大抵”xxx Code Sequence" で表現します。Code Sequence とは、(CodeValue, CodeScheme, (CodeSchemeVersion), CodeMeaning)の3ないし4つの値の組で表します。
+
+そして、&lt;key&gt;のノード名自体、DICOM SRの世界では、"Concept Name" と
+表現されています。別の章では、key-value と説明している癖に、タグの
+名称は"Concept Name"と表現しているところが、理解を進めるのに苦しめられました。
+
+こういうものだと割り切って進めるしかないです。
+
+Code Sequenceに話を戻して KVP,  XRayTubeCurrent, ExposureTimeは
+どう表現されているのかというと、それぞれ以下のようになります。
+これらの値は、PS3.16のTID 10003 および TID 10003B の定義を見るのが早いです。
+厳密に言うと、定義は、PS3.16のAppendix D (DICOM Controlled Terminology 
+Definitions (Normative)) に記載されているのですが、
+この表から探し出すのは現実的ではないです(興味があれば、
+一度規格書の該当ページを見てみるのをお勧めします。)。
+
+ key  |    | CodeValue | CodeScheme | CodeSchemeVersion | CodeMeaning 
+------|----|-----------|------------|-------------------|------------
+IrradiationEventXRayData| → | 113706 | DCM | (省略) | "Irradiation Event X-Ray Data"
+ KVP | → | 113733 | DCM | (省略) | "KVP"
+ XRayTubeCurrent | → | 113734 | DCM | (省略) | "X-Ray Tube Current"
+ ExposureTime | → | 113824 | DCM | (省略) | "Exposure Time"
+
+key 一つが、3つの値の組(!)で表現されることになります。
+「組」なので、ここに元のXMLにはなかった階層が一つできます。
+
+key がCode Sequence でコード化され、名称が "Concept Name" と表現されるので、
+&lt;key&gt;ノードは、&lt;ConceptNameCodeSeq&gt; に置き換えます。
+ConceptNameCodeSeqは、DICOMタグ(0040,A043)に対応します(PS3.3 Table C.17-5)。
+
+````
+
+    <node VT="CONTAINER">
+        <ConceptNameCodeSeq>
+            <CodeValue>113706</CodeValue>
+            <CodeScheme>DCM</CodeScheme>
+            <CodeMeaning>Irradiation Event X-Ray Data</CodeMeaning>
+        </ConceptNameCodeSeq>
+        <content_value>
+            <node VT="NUM">
+                <ConceptNameCodeSeq>
+                    <CodeValue>113733</CodeValue>
+                    <CodeScheme>DCM</CodeScheme>
+                    <CodeMeaning>KVP</CodeMeaning>
+                </ConcenptNameCodeSeq>
+                <num_value unit="kV">80</num_value>
+            </node>
+            <node VT="NUM">
+                <ConceptNameCodeSeq>
+                    <CodeValue>113734</CodeValue>
+                    <CodeScheme>DCM</CodeScheme>
+                    <CodeMeaning>X-Ray Tube Current</CodeMeaning>
+                </ConceptNameCodeSeq>
+                <num_value unit="mA">200</num_value_>
+            </node>
+            <node VT="NUM">
+                <ConceptNameCodeSeq>
+                    <CodeValue>113824</CodeValue>
+                    <CodeScheme>DCM</CodeScheme>
+                    <CodeMeaning>Exposure Time</CodeMeaning>
+                </ConceptNameCodeSeq>
+                <num_value unit="ms">5</num_value>
+            </node>
+        </content_value>
+    </node>
+````
+
+非常に長くなっています。次でさらに長くなります。
+
+### 測定数値の単位のコード化
+
+次に、KV, mA, msec の数値について、単位をコード化した形で表します。
+ここでもコード化なので、xxx Code Sequence 形式です。
+
+unit |    | CodeValue | CodeSheme | CodeShemeVersion | CodeMeaning
+-----|----|-----------|-----------|------------------|------------
+kV   | →  | kV        | UCUM      | (省略)           | "kV"
+mA   | →  | mA        | UCUM      | (省略)           | "mA"
+ms   | →  | ms        | UCUM      | (省略)           | "ms"
+
+&lt;num_value&gt;はDICOM規格の名称に合わせて、&lt;MeasuredValueSeq&gt;に置き換えます。これは、DICOM タグ (0040, A300) に対応します(PS3.3 Table C.17-5 および Table C.18.1-1 参照)。
+
+子要素の名称の由来の説明は省略します(PS3.3のC.18.1 (Numeric Measurement Macro) 参照)
+
+````
+
+    <node VT="CONTAINER">
+        <ConceptNameCodeSeq>
+            <CodeValue>113706</CodeValue>
+            <CodeScheme>DCM</CodeScheme>
+            <CodeMeaning>Irradiation Event X-Ray Data</CodeMeaning>
+        </ConceptNameCodeSeq>
+        <content_value>
+            <node VT="NUM">
+                <ConceptNameCodeSeq>
+                    <CodeValue>113733</CodeValue>
+                    <CodeScheme>DCM</CodeScheme>
+                    <CodeMeaning>KVP</CodeMeaning>
+                </ConcenptNameCodeSeq>
+                <MeasuredValueSeq>
+                    <NumericValue>80</NumericValue>
+                    <MesurementUnitCodeSeq>
+                        <CodeValue>kV</CodeValue>
+                        <CodeSheme>UCUM</CodeScheme>
+                        <CodeMeaning>kV</CodeMeaning>
+                    </MeasurementUnitCodeSeq>
+                </MeasuredValueSeq>
+            </node>
+            <node VT="NUM">
+                <ConceptNameCodeSeq>
+                    <CodeValue>113734</CodeValue>
+                    <CodeScheme>DCM</CodeScheme>
+                    <CodeMeaning>X-Ray Tube Current</CodeMeaning>
+                </ConceptNameCodeSeq>
+                <MeasuredValueSeq>
+                    <NumericValue>200</NumericValue>
+                    <MeasurementUnitCodeSeq>
+                        <CodeValue>mA</CodeValue>
+                        <CodeScheme>UCUM</CodeScheme>
+                        <CodeMeaning>mA</CodeMeaning>
+                    </MeasurementUnitCodeSeq>
+                </MeasuredValueSeq>
+            </node>
+            <node VT="NUM">
+                <ConceptNameCodeSeq>
+                    <CodeValue>113824</CodeValue>
+                    <CodeScheme>DCM</CodeScheme>
+                    <CodeMeaning>Exposure Time</CodeMeaning>
+                </ConceptNameCodeSeq>
+                <MeasuredValueSeq>
+                    <NumericValue>5</NumericValue>
+                    <MeasurementUnitCodeSeq>
+                        <CodeValue>ms</CodeValue>
+                        <CodeScheme>UCUM</CodeScheme>
+                        <CodeMeaning>ms</CodeMeaning>
+                    </MeasurementUnitCodeSeq>
+                </MeasuredValueSeq>
+            </node>
+        </content_value>
+    </node>
+````
 
 
