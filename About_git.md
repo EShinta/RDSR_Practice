@@ -29,7 +29,18 @@ gitに対するファイル操作であれば、VS Codeも色々サポートさ�
 
 こちらはコミットメッセージが一行入力しか想定されていないのが、なんだかなぁという感じ。
 
+## GitHub上でのPull request作成、および処理について
 
+とりあえず、git-flow でブランチを初期化して、develop ブランチで作業してみた。
 
+4回程コミットしたあと、GitHub上で Pull Reqeustを作成した。
+特定の範囲の変更ではなくて、develop の分岐を作成した後の全ての変更が
+Pull Request に含まれるみたい。
 
+GitHub上で Pull Requestを処理するとき、develop側のコミット履歴をすべて忠実に
+反映する形(merge)のほか、squash/rebase という反映方法も選択できた。
 
+squash はdevelop側の個々のコミット履歴は無視して、1回のコミットとして
+更新するらしい。
+
+rebase はGitHubの説明を読むだけではよくわからなかった。
